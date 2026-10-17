@@ -1,9 +1,9 @@
 id: mobile
 name: nddev-device-sync-mobile
-version: 0.0.1-alpha.21
+version: 0.0.1-alpha.22
 channel: alpha
 license: AGPL-3.0-only
 repository: NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-mobile
 standards_lock: standarts.lock
 platforms: [android, ios]
-capabilities: [nds-session-ui]
+capabilities: [nds-session-ui, company-administration-ui]
