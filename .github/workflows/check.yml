@@ -12,6 +12,7 @@ concurrency:
   cancel-in-progress: true
 env:
   CARGO_BUILD_JOBS: 4
+  GH_TOKEN: ${{ github.token }}
 jobs:
   builds:
     strategy:
@@ -25,12 +26,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: '3.14.4'
+          python-version: '3.15.0'
       - id: design
         shell: bash
         run: |
@@ -41,7 +42,7 @@ jobs:
           assert re.fullmatch('[a-f0-9]{40}',sha)
           with open(os.environ['GITHUB_OUTPUT'],'a') as output: output.write('sha='+sha+'\n')
           PY
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: NDDev-Technocracy-OpenNetwork-NDS/nddev-opennetwork-design-system
           ref: ${{ steps.design.outputs.sha }}
@@ -54,29 +55,30 @@ jobs:
       - run: python -S vendor/design-system/tools/generate_launchers.py --mobile . --verify
       - id: desktop
         run: python scripts/desktop-source.py
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop
           ref: ${{ steps.desktop.outputs.sha }}
           path: vendor/desktop
           persist-credentials: false
       - run: python vendor/desktop/scripts/bootstrap-ci.py
-      - run: rustup toolchain install 1.99.0 --profile minimal --component clippy
+      - run: rustup toolchain install 1.99.1 --profile minimal --component clippy
+      - name: Install current LTS Java
+        if: matrix.target == 'android'
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
+        with:
+          distribution: temurin
+          java-version: '25.0.4.1+1'
       - name: Native Android toolchain
         if: matrix.target == 'android'
         shell: bash
         run: |
-          test -d "$JAVA_HOME_21_X64"
-          echo "$JAVA_HOME_21_X64/bin" >> "$GITHUB_PATH"
-          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
-          export JAVA_HOME="$JAVA_HOME_21_X64"
-          export PATH="$JAVA_HOME/bin:$PATH"
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'cmake;3.22.1'
-          rustup target add --toolchain 1.99.0 aarch64-linux-android x86_64-linux-android
-          flutter config --android-sdk "$ANDROID_HOME" --jdk-dir "$JAVA_HOME_21_X64"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;37.0.0' 'ndk;30.0.16248370'
+          rustup target add --toolchain 1.99.1 aarch64-linux-android x86_64-linux-android
+          flutter config --android-sdk "$ANDROID_HOME" --jdk-dir "$JAVA_HOME"
       - name: Native iOS targets
         if: matrix.target == 'ios'
-        run: rustup target add --toolchain 1.99.0 aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+        run: rustup target add --toolchain 1.99.1 aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
       - run: flutter pub get --enforce-lockfile
       - run: dart format --output=none --set-exit-if-changed lib
       - run: flutter analyze --no-pub
@@ -84,12 +86,12 @@ jobs:
         if: matrix.target == 'android'
         shell: bash
         run: |
-          export CC_aarch64_linux_android="$ANDROID_HOME/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android35-clang"
-          export CC_x86_64_linux_android="$ANDROID_HOME/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android35-clang"
-          export AR_aarch64_linux_android="$ANDROID_HOME/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+          export CC_aarch64_linux_android="$ANDROID_HOME/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android35-clang"
+          export CC_x86_64_linux_android="$ANDROID_HOME/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android35-clang"
+          export AR_aarch64_linux_android="$ANDROID_HOME/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
           export AR_x86_64_linux_android="$AR_aarch64_linux_android"
-          cargo +1.99.0 clippy --manifest-path vendor/desktop/packages/nds_native/rust/Cargo.toml --locked --all-targets --target aarch64-linux-android -- -D warnings
-          cargo +1.99.0 clippy --manifest-path vendor/desktop/packages/nds_native/rust/Cargo.toml --locked --all-targets --target x86_64-linux-android -- -D warnings
+          python vendor/desktop/packages/nds_native/tool/prepare_native.py -- rustup run 1.99.1 cargo clippy --manifest-path vendor/desktop/packages/nds_native/rust/Cargo.toml --locked --all-targets --target aarch64-linux-android -- -D warnings
+          python vendor/desktop/packages/nds_native/tool/prepare_native.py -- rustup run 1.99.1 cargo clippy --manifest-path vendor/desktop/packages/nds_native/rust/Cargo.toml --locked --all-targets --target x86_64-linux-android -- -D warnings
       - name: Android ARM64 app
         if: matrix.target == 'android'
         run: python vendor/desktop/scripts/build.py apk --debug --target-platform android-arm64
