@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "ai.nddev.nds.nddev_device_sync_mobile"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "30.0.16248370"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

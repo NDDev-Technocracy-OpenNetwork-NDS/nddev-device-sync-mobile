@@ -1,6 +1,6 @@
 name: nddev_device_sync_mobile
 description: NDDev OpenNetwork NDS mobile client.
-version: 0.0.1-alpha.21+21
+version: 0.0.1-alpha.22+22
 publish_to: none
 environment:
   sdk: ">=3.13.0 <4.0.0"
@@ -11,7 +11,7 @@ dependencies:
   nds_ui:
     git:
       url: https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop.git
-      ref: f0dfcae8fd80fdfc6e5ce7cce6426f5b8c9c8a3c
+      ref: 72eed56c17446efb689b06761556454bbc349258
       path: packages/nds_ui
 dev_dependencies:
   flutter_test:
