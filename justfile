@@ -5,4 +5,4 @@ check:
     flutter analyze --no-pub
 
 build-android:
-    CARGO_BUILD_JOBS=4 flutter build apk --debug --target-platform android-arm64
+    CARGO_BUILD_JOBS=4 python3 scripts/build.py apk --debug --target-platform android-arm64
