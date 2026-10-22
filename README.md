@@ -27,3 +27,5 @@ Organizations/Accounts Rust client and presentation. Administrative changes are
 online; an uncertain command can be retried without replacing its identity.
 Native invitation links are explicitly imported into the signed-out client;
 OS app/universal-link associations remain deployment-specific.
+
+Release journals live in [GitHub Releases](https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-mobile/releases).

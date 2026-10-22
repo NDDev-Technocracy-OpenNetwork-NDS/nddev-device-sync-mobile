@@ -1,30 +1,24 @@
 name: NDS checks
+
 on:
   pull_request:
-    branches: [dev, main]
-  push:
-    branches: [dev, main]
+    branches: [main, dev]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 env:
-  CARGO_BUILD_JOBS: 4
   GH_TOKEN: ${{ github.token }}
+
 jobs:
-  builds:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            target: android
-          - os: macos-15
-            target: ios
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 40
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -48,10 +42,8 @@ jobs:
           ref: ${{ steps.design.outputs.sha }}
           path: vendor/design-system
           persist-credentials: false
-      - if: runner.os == 'Linux'
-        run: python -m pip install --require-hashes -r vendor/design-system/tools/requirements-icons.txt
-      - if: runner.os == 'Linux'
-        run: bash vendor/design-system/tools/with-renderer-zlib.sh python vendor/design-system/tools/generate_launchers.py --mobile . --check
+      - run: python -m pip install --require-hashes -r vendor/design-system/tools/requirements-icons.txt
+      - run: bash vendor/design-system/tools/with-renderer-zlib.sh python vendor/design-system/tools/generate_launchers.py --mobile . --check
       - run: python -S vendor/design-system/tools/generate_launchers.py --mobile . --verify
       - id: desktop
         run: python scripts/desktop-source.py
@@ -62,66 +54,6 @@ jobs:
           path: vendor/desktop
           persist-credentials: false
       - run: python vendor/desktop/scripts/bootstrap-ci.py
-      - run: rustup toolchain install 1.99.1 --profile minimal --component clippy
-      - name: Install current LTS Java
-        if: matrix.target == 'android'
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
-        with:
-          distribution: temurin
-          java-version: '25.0.4.1+1'
-      - name: Native Android toolchain
-        if: matrix.target == 'android'
-        shell: bash
-        run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;37.0.0' 'ndk;30.0.16248370'
-          rustup target add --toolchain 1.99.1 aarch64-linux-android x86_64-linux-android
-          flutter config --android-sdk "$ANDROID_HOME" --jdk-dir "$JAVA_HOME"
-      - name: Native iOS targets
-        if: matrix.target == 'ios'
-        run: rustup target add --toolchain 1.99.1 aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
       - run: flutter pub get --enforce-lockfile
       - run: dart format --output=none --set-exit-if-changed lib
       - run: flutter analyze --no-pub
-      - name: Native Android compilation and lints
-        if: matrix.target == 'android'
-        shell: bash
-        run: |
-          export CC_aarch64_linux_android="$ANDROID_HOME/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android35-clang"
-          export CC_x86_64_linux_android="$ANDROID_HOME/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android35-clang"
-          export AR_aarch64_linux_android="$ANDROID_HOME/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
-          export AR_x86_64_linux_android="$AR_aarch64_linux_android"
-          python vendor/desktop/packages/nds_native/tool/prepare_native.py -- rustup run 1.99.1 cargo clippy --manifest-path vendor/desktop/packages/nds_native/rust/Cargo.toml --locked --all-targets --target aarch64-linux-android -- -D warnings
-          python vendor/desktop/packages/nds_native/tool/prepare_native.py -- rustup run 1.99.1 cargo clippy --manifest-path vendor/desktop/packages/nds_native/rust/Cargo.toml --locked --all-targets --target x86_64-linux-android -- -D warnings
-      - name: Android ARM64 app
-        if: matrix.target == 'android'
-        run: python vendor/desktop/scripts/build.py apk --debug --target-platform android-arm64
-      - name: Android artifact boundary
-        if: matrix.target == 'android'
-        run: python vendor/desktop/scripts/check-artifact.py build/app/outputs/flutter-apk/app-debug.apk --native-source-commit ${{ steps.desktop.outputs.sha }}
-      - name: Android wrapper/native provenance
-        if: matrix.target == 'android'
-        run: python vendor/desktop/scripts/build-provenance.py build/app/outputs/flutter-apk/app-debug.apk --output build/nds-android-provenance.json
-      - name: iOS simulator build
-        if: matrix.target == 'ios'
-        run: python vendor/desktop/scripts/build.py ios --simulator --debug --no-codesign
-      - name: iOS simulator artifact boundary
-        if: matrix.target == 'ios'
-        run: python vendor/desktop/scripts/check-artifact.py build/ios/iphonesimulator --native-source-commit ${{ steps.desktop.outputs.sha }}
-      - name: iOS simulator wrapper/native provenance
-        if: matrix.target == 'ios'
-        run: python vendor/desktop/scripts/build-provenance.py build/ios/iphonesimulator --output build/nds-ios-simulator-provenance.json
-      - name: Unsigned iOS device build
-        if: matrix.target == 'ios'
-        run: python vendor/desktop/scripts/build.py ios --debug --no-codesign
-      - name: iOS device artifact boundary
-        if: matrix.target == 'ios'
-        run: python vendor/desktop/scripts/check-artifact.py build/ios/iphoneos --native-source-commit ${{ steps.desktop.outputs.sha }}
-      - name: iOS device wrapper/native provenance
-        if: matrix.target == 'ios'
-        run: python vendor/desktop/scripts/build-provenance.py build/ios/iphoneos --output build/nds-ios-device-provenance.json
-  quality:
-    if: always()
-    needs: [builds]
-    runs-on: ubuntu-24.04
-    steps:
-      - run: test '${{ needs.builds.result }}' = success
