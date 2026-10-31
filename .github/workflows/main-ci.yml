@@ -24,8 +24,12 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: android
+          # The simulator and device builds compile separate native targets;
+          # parallel jobs keep the slower one on the critical path alone.
           - os: macos-15
-            target: ios
+            target: ios-simulator
+          - os: macos-15
+            target: ios-device
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     steps:
@@ -80,8 +84,18 @@ jobs:
           rustup target add --toolchain 1.99.1 aarch64-linux-android x86_64-linux-android
           flutter config --android-sdk "$ANDROID_HOME" --jdk-dir "$JAVA_HOME"
       - name: Native iOS targets
-        if: matrix.target == 'ios'
+        if: startsWith(matrix.target, 'ios')
         run: rustup target add --toolchain 1.99.1 aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+      - name: Restore the Gradle dependency and build cache
+        if: matrix.target == 'android'
+        id: gradle-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
+          restore-keys: gradle-${{ runner.os }}-
       - run: flutter pub get --enforce-lockfile
       - run: dart format --output=none --set-exit-if-changed lib
       - run: flutter analyze --no-pub
@@ -104,23 +118,31 @@ jobs:
       - name: Android wrapper/native provenance
         if: matrix.target == 'android'
         run: python vendor/desktop/scripts/build-provenance.py build/app/outputs/flutter-apk/app-debug.apk --output build/nds-android-provenance.json
+      - name: Save the Gradle dependency and build cache
+        if: matrix.target == 'android' && github.ref == 'refs/heads/main' && steps.gradle-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.gradle-cache.outputs.cache-primary-key }}
       - name: iOS simulator build
-        if: matrix.target == 'ios'
+        if: matrix.target == 'ios-simulator'
         run: python vendor/desktop/scripts/build.py ios --simulator --debug --no-codesign
       - name: iOS simulator artifact boundary
-        if: matrix.target == 'ios'
+        if: matrix.target == 'ios-simulator'
         run: python vendor/desktop/scripts/check-artifact.py build/ios/iphonesimulator --native-source-commit ${{ steps.desktop.outputs.sha }}
       - name: iOS simulator wrapper/native provenance
-        if: matrix.target == 'ios'
+        if: matrix.target == 'ios-simulator'
         run: python vendor/desktop/scripts/build-provenance.py build/ios/iphonesimulator --output build/nds-ios-simulator-provenance.json
       - name: Unsigned iOS device build
-        if: matrix.target == 'ios'
+        if: matrix.target == 'ios-device'
         run: python vendor/desktop/scripts/build.py ios --debug --no-codesign
       - name: iOS device artifact boundary
-        if: matrix.target == 'ios'
+        if: matrix.target == 'ios-device'
         run: python vendor/desktop/scripts/check-artifact.py build/ios/iphoneos --native-source-commit ${{ steps.desktop.outputs.sha }}
       - name: iOS device wrapper/native provenance
-        if: matrix.target == 'ios'
+        if: matrix.target == 'ios-device'
         run: python vendor/desktop/scripts/build-provenance.py build/ios/iphoneos --output build/nds-ios-device-provenance.json
   quality:
     if: always()
