@@ -11,7 +11,7 @@ dependencies:
   nds_ui:
     git:
       url: https://github.com/NDDev-Technocracy-OpenNetwork-NDS/nddev-device-sync-desktop.git
-      ref: 33fe9a15289bbc12a7d907858d29fe708146fee6
+      ref: 031d383a38a1657cfcf79702d37e3ad8b2a3c0ea
       path: packages/nds_ui
 dev_dependencies:
   flutter_test:
