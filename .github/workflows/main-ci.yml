@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: '3.15.0'
       - id: design
@@ -89,7 +89,7 @@ jobs:
       - name: Restore the Gradle dependency and build cache
         if: matrix.target == 'android'
         id: gradle-cache
-        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.gradle/caches
@@ -120,7 +120,7 @@ jobs:
         run: python vendor/desktop/scripts/build-provenance.py build/app/outputs/flutter-apk/app-debug.apk --output build/nds-android-provenance.json
       - name: Save the Gradle dependency and build cache
         if: matrix.target == 'android' && github.ref == 'refs/heads/main' && steps.gradle-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.gradle/caches
