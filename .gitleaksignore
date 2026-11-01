@@ -1,0 +1,10 @@
+# Reviewed historical Gitleaks findings (2026-11-01, STD-0004 R-0015). Each fingerprint is a proven
+# non-credential; values are not reproduced here. New findings stay blocking.
+
+# generated/launcher-provenance.json:29 @7e6c4b493b8d [generic-api-key]: launcher provenance records the SHA-256 of the vendored
+# design-system tokens/tokens.json; it equals sha256 of that public file at the recorded design-system commit.
+7e6c4b493b8d3f6a5edb4907d5e43d8514618688:generated/launcher-provenance.json:generic-api-key:29
+
+# generated/launcher-provenance.json:29 @0cfa5ea3b09a [generic-api-key]: launcher provenance records the SHA-256 of the vendored
+# design-system tokens/tokens.json; it equals sha256 of that public file at the recorded design-system commit.
+0cfa5ea3b09abf9c829c471db5c9ade54b285c9d:generated/launcher-provenance.json:generic-api-key:29
