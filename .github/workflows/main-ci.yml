@@ -114,7 +114,9 @@ jobs:
         run: python vendor/desktop/scripts/build.py apk --debug --target-platform android-arm64
       - name: Android artifact boundary
         if: matrix.target == 'android'
-        run: python vendor/desktop/scripts/check-artifact.py build/app/outputs/flutter-apk/app-debug.apk --native-source-commit ${{ steps.desktop.outputs.sha }}
+        env:
+          DESKTOP_SOURCE_SHA: ${{ steps.desktop.outputs.sha }}
+        run: python vendor/desktop/scripts/check-artifact.py build/app/outputs/flutter-apk/app-debug.apk --native-source-commit "$DESKTOP_SOURCE_SHA"
       - name: Android wrapper/native provenance
         if: matrix.target == 'android'
         run: python vendor/desktop/scripts/build-provenance.py build/app/outputs/flutter-apk/app-debug.apk --output build/nds-android-provenance.json
@@ -131,7 +133,9 @@ jobs:
         run: python vendor/desktop/scripts/build.py ios --simulator --debug --no-codesign
       - name: iOS simulator artifact boundary
         if: matrix.target == 'ios-simulator'
-        run: python vendor/desktop/scripts/check-artifact.py build/ios/iphonesimulator --native-source-commit ${{ steps.desktop.outputs.sha }}
+        env:
+          DESKTOP_SOURCE_SHA: ${{ steps.desktop.outputs.sha }}
+        run: python vendor/desktop/scripts/check-artifact.py build/ios/iphonesimulator --native-source-commit "$DESKTOP_SOURCE_SHA"
       - name: iOS simulator wrapper/native provenance
         if: matrix.target == 'ios-simulator'
         run: python vendor/desktop/scripts/build-provenance.py build/ios/iphonesimulator --output build/nds-ios-simulator-provenance.json
@@ -140,7 +144,9 @@ jobs:
         run: python vendor/desktop/scripts/build.py ios --debug --no-codesign
       - name: iOS device artifact boundary
         if: matrix.target == 'ios-device'
-        run: python vendor/desktop/scripts/check-artifact.py build/ios/iphoneos --native-source-commit ${{ steps.desktop.outputs.sha }}
+        env:
+          DESKTOP_SOURCE_SHA: ${{ steps.desktop.outputs.sha }}
+        run: python vendor/desktop/scripts/check-artifact.py build/ios/iphoneos --native-source-commit "$DESKTOP_SOURCE_SHA"
       - name: iOS device wrapper/native provenance
         if: matrix.target == 'ios-device'
         run: python vendor/desktop/scripts/build-provenance.py build/ios/iphoneos --output build/nds-ios-device-provenance.json
@@ -150,3 +156,33 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       - run: test '${{ needs.builds.result }}' = success
+
+  workflows:
+    # Workflow lint and audit plus the secret scan: new commits on pull requests,
+    # the full history on main (STD-0004 library tools, verified prebuilt binaries).
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows/.github/actions/tools@9cc44a5043ddd266f3e73fefacc52f5cf5a7d70f # nddev-cicd-v0.6.18
+        with:
+          capability: security
+      - name: Lint and audit workflows
+        run: |
+          actionlint
+          zizmor --offline --no-progress .github
+      - name: Scan new pull request commits, or the full history on main
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ -n "$BASE" ]; then
+            gitleaks git --no-banner --redact --log-opts="$BASE..$HEAD" .
+          else
+            gitleaks git --no-banner --redact .
+          fi
