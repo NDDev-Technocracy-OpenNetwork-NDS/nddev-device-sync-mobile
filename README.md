@@ -2,7 +2,12 @@
 
 Thin Android/iOS runners for [NDDev OpenNetwork](https://nddev.ai), AGPL-3.0-only.
 Shared en/ru presentation and the generated native bridge come from the desktop
-repository. Rust owns identity/session storage; Flutter never receives tokens.
+repository. Rust owns identity and session storage. The Mobile manifest and lock
+select the same immutable Desktop revision for Shared UI and the native bridge.
+
+The diagnostics screen shows the local SDK collection state separately from the
+policy and delivery status. A confirmed Off persists while the authenticated
+policy is Unknown.
 
 Use the Flutter/Dart and Rust pins from Shared. Android builds use API 36,
 JDK 25, NDK 30.0.16248370 and the Rust target for the device architecture. The native
