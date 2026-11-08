@@ -1,4 +1,4 @@
-# Reviewed historical Gitleaks findings (2026-11-01, STD-0004 R-0015). Each fingerprint is a proven
+# Reviewed historical Gitleaks findings (2026-11-01). Each fingerprint is a proven
 # non-credential; values are not reproduced here. New findings stay blocking.
 
 # generated/launcher-provenance.json:29 @7e6c4b493b8d [generic-api-key]: launcher provenance records the SHA-256 of the vendored
