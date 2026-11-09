@@ -2,7 +2,7 @@ name: main-ci
 
 on:
   push:
-    branches: [main]
+    branches: [dev, main]
   workflow_dispatch:
 
 permissions:
@@ -33,6 +33,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     steps:
+      - name: Disable external telemetry
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/telemetry@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
@@ -97,8 +99,10 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
           restore-keys: gradle-${{ runner.os }}-
       - run: flutter pub get --enforce-lockfile
-      - run: dart format --output=none --set-exit-if-changed lib
-      - run: flutter analyze --no-pub
+      - name: Check the mobile sources
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/recipe@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
+        with:
+          recipe: check
       - name: Native Android compilation and lints
         if: matrix.target == 'android'
         shell: bash
@@ -155,34 +159,14 @@ jobs:
     needs: [builds]
     runs-on: ubuntu-26.04
     steps:
+      - name: Disable external telemetry
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/telemetry@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
       - run: test '${{ needs.builds.result }}' = success
 
   workflows:
-    # Workflow lint and audit plus the secret scan: new commits on pull requests,
-    # the full history on main (STD-0004 library tools, verified prebuilt binaries).
-    runs-on: ubuntu-26.04
-    timeout-minutes: 10
     permissions:
       contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows/.github/actions/tools@c192c6adcf22088abf456635de614d42e8fa3f8d # nddev-cicd-v0.6.20
-        with:
-          capability: security
-      - name: Lint and audit workflows
-        run: |
-          actionlint
-          zizmor --offline --no-progress .github
-      - name: Scan new pull request commits, or the full history on main
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ -n "$BASE" ]; then
-            gitleaks git --no-banner --redact --log-opts="$BASE..$HEAD" .
-          else
-            gitleaks git --no-banner --redact .
-          fi
+      issues: write
+    uses: NDDev-Technocracy-OpenNetwork/nddev-ci/.github/workflows/security.yml@52d8302d2272967a21fd8e3ae594205588648777 # v0.6.28
+    with:
+      hosted-runner: ubuntu-26.04
