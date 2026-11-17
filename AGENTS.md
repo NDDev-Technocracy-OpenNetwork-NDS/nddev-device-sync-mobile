@@ -13,3 +13,9 @@ infrastructure configuration or runtime evidence. Preserve native stores and unr
 work. Run formatting, analysis, generated-source checks and actual platform acceptance;
 never represent a mock or a host-only test as another platform's acceptance. Working
 branch -> dev -> main; no implicit release, deploy or backup/recovery.
+
+Android byte regeneration uses the interpreter declared by
+generated/launcher-provenance.json at source.renderer.python. The source and
+Apple roles can follow ordinary SDK updates independently. Keep the producer's
+renderer declaration and both regeneration/provenance checks intact; do not
+hand-edit rendered bytes to accommodate a generic interpreter update.
