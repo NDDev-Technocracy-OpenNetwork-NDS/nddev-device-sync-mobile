@@ -21,6 +21,7 @@ jobs:
     outputs:
       desktop: ${{ steps.desktop.outputs.sha }}
       rust: ${{ steps.pins.outputs.rust }}
+      renderer_python: ${{ steps.pins.outputs.renderer_python }}
     steps:
       - name: Prepare immutable source resolution
         id: prepare
@@ -35,15 +36,20 @@ jobs:
           ref: ${{ steps.desktop.outputs.sha }}
           path: vendor/desktop
           persist-credentials: false
-      - name: Resolve the selected Shared compiler without choosing another version
+      - name: Resolve the selected Shared compiler and canonical renderer
         id: pins
         run: |
           python - <<'PYPINS'
-          import os,re,tomllib
+          import json,os,re,tomllib
           from pathlib import Path
           rust=tomllib.loads(Path('vendor/desktop/packages/nds_native/rust/rust-toolchain.toml').read_text())['toolchain']['channel']
           if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+',rust): raise SystemExit('Expected an exact selected Shared compiler')
-          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output: output.write('rust='+rust+'\n')
+          renderer=json.loads(Path('generated/launcher-provenance.json').read_text())['source']['renderer']
+          renderer_python=renderer['python']
+          if renderer.get('platform')!='Linux-x86_64' or not isinstance(renderer_python,str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+',renderer_python): raise SystemExit('Expected an exact canonical Linux renderer interpreter')
+          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
+              output.write('rust='+rust+'\n')
+              output.write('renderer_python='+renderer_python+'\n')
           PYPINS
       - name: Complete source resolution
         if: always()
@@ -80,7 +86,7 @@ jobs:
         id: prepare_android
         uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@a12acfc75fd7daee2fac9a246ee60683fe18955b # v0.6.67
         with:
-          python-version: '3.15.2'
+          python-version: ${{ needs.source.outputs.renderer_python }}
           rust-version: ${{ needs.source.outputs.rust }}
           rust-components: clippy
           rust-targets: ${{ matrix.rust_targets }}
