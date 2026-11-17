@@ -26,7 +26,7 @@ jobs:
         id: prepare
         uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@a12acfc75fd7daee2fac9a246ee60683fe18955b # v0.6.67
         with:
-          python-version: '3.15.0'
+          python-version: '3.15.2'
       - id: desktop
         run: python scripts/desktop-source.py
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -80,7 +80,7 @@ jobs:
         id: prepare_android
         uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@a12acfc75fd7daee2fac9a246ee60683fe18955b # v0.6.67
         with:
-          python-version: '3.15.0'
+          python-version: '3.15.2'
           rust-version: ${{ needs.source.outputs.rust }}
           rust-components: clippy
           rust-targets: ${{ matrix.rust_targets }}
@@ -90,7 +90,7 @@ jobs:
         id: prepare_apple
         uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@a12acfc75fd7daee2fac9a246ee60683fe18955b # v0.6.67
         with:
-          python-version: '3.15.0'
+          python-version: '3.15.2'
           rust-version: ${{ needs.source.outputs.rust }}
           rust-components: clippy
           rust-targets: ${{ matrix.rust_targets }}
