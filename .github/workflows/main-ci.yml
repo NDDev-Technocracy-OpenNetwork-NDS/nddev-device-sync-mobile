@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Prepare immutable source resolution
         id: prepare
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@6bd06a55307dccfd7057c1c3260067eb8adc93a1 # v0.6.79
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@d9fbe93b75c105a99632ebbd9d70901404303acd # v0.6.80
         with:
           python-version: '3.15.2'
       - id: desktop
@@ -53,7 +53,7 @@ jobs:
           PYPINS
       - name: Complete source resolution
         if: always()
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/complete@6bd06a55307dccfd7057c1c3260067eb8adc93a1 # v0.6.79
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/complete@d9fbe93b75c105a99632ebbd9d70901404303acd # v0.6.80
         with:
           status: ${{ job.status }}
           project-outcome: ${{ steps.prepare.outcome == 'failure' && 'success' || job.status }}
@@ -84,7 +84,7 @@ jobs:
       - name: Prepare Android execution
         if: matrix.target == 'android'
         id: prepare_android
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@6bd06a55307dccfd7057c1c3260067eb8adc93a1 # v0.6.79
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@d9fbe93b75c105a99632ebbd9d70901404303acd # v0.6.80
         with:
           python-version: ${{ needs.source.outputs.renderer_python }}
           rust-version: ${{ needs.source.outputs.rust }}
@@ -94,7 +94,7 @@ jobs:
       - name: Prepare Apple execution
         if: matrix.target != 'android'
         id: prepare_apple
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@6bd06a55307dccfd7057c1c3260067eb8adc93a1 # v0.6.79
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/prepare@d9fbe93b75c105a99632ebbd9d70901404303acd # v0.6.80
         with:
           python-version: '3.15.2'
           rust-version: ${{ needs.source.outputs.rust }}
@@ -184,7 +184,7 @@ jobs:
         run: python vendor/desktop/scripts/build-provenance.py build/ios/iphoneos --output build/nds-ios-device-provenance.json
       - name: Complete native compilation
         if: always()
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/complete@6bd06a55307dccfd7057c1c3260067eb8adc93a1 # v0.6.79
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/complete@d9fbe93b75c105a99632ebbd9d70901404303acd # v0.6.80
         with:
           status: ${{ job.status }}
           project-outcome: ${{ (steps.prepare_android.outcome == 'failure' || steps.prepare_apple.outcome == 'failure') && 'success' || job.status }}
@@ -201,7 +201,7 @@ jobs:
         run: test '${{ needs.source.result }}' = success && test '${{ needs.builds.result }}' = success
       - name: Record the actual aggregate verdict
         if: always()
-        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/job-record@6bd06a55307dccfd7057c1c3260067eb8adc93a1 # v0.6.79
+        uses: NDDev-Technocracy-OpenNetwork/nddev-ci/actions/job-record@d9fbe93b75c105a99632ebbd9d70901404303acd # v0.6.80
         with:
           task: mobile-native-quality
           status: ${{ job.status }}
