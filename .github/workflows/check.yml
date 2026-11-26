@@ -60,6 +60,6 @@ jobs:
 
   merge-stops:
     if: github.event_name == 'pull_request'
-    uses: NDDev-Technocracy-OpenNetwork/nddev-ci/.github/workflows/merge-stops.yml@276ebc72582644040950ff13629469e16370d432 # v0.6.169
+    uses: NDDev-Technocracy-OpenNetwork/nddev-ci/.github/workflows/merge-stops.yml@5af6f6d2d7039ff332b02aec2482107ac4381cdf # v0.6.170
     permissions:
       contents: read
